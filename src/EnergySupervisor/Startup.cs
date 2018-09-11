@@ -19,6 +19,7 @@ namespace EnergySupervisor
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            Console.WriteLine(configuration["AllowedHosts"]);
         }
 
         public IConfiguration Configuration { get; }
@@ -33,8 +34,8 @@ namespace EnergySupervisor
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddSingleton<DeviceController>();
-            services.AddHostedService<TelemetryIngesterHostedService>();
+            //services.AddSingleton<DeviceController>();
+            services.AddHostedService<FakeTelemetryIngesterHostedService>();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddSignalR();
         }

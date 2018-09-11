@@ -3,36 +3,53 @@
 var connection = new signalR.HubConnectionBuilder().withUrl("/pageUpdateHub").build();
 
 connection.on("LedStatusUpdate", function (deviceId, isLedOn) {
-    var encodedMsg = deviceId + " is LED on " + isLedOn;
-    var li = document.createElement("li");
-    li.textContent = encodedMsg;
-    document.getElementById("messagesList").appendChild(li);
+    var deviceDiv = document.getElementById(deviceId);
+    
+    if (deviceDiv != null)
+        deviceDiv.getElementsByClassName("ledStatus")[0].src = isLedOnToImgSrc(isLedOn);
+    else {
+        var newDevice = document.createElement("div");
+        newDevice.id = deviceId;
+        var idLabel = document.createElement("label");
+        idLabel.className = "deviceId";
+        idLabel.innerHTML = deviceId;
+        
+        var ledStatusLabel = document.createElement("img");
+        ledStatusLabel.className = "ledStatus";
+        ledStatusLabel.src = isLedOnToImgSrc(isLedOn);
+        
+        newDevice.appendChild(idLabel);
+        newDevice.appendChild(ledStatusLabel);
+        
+        var listOfActiveDevices = document.getElementById("listOfActiveDevices");
+        listOfActiveDevices.appendChild(newDevice);
+    }
 });
 
+function isLedOnToImgSrc(isLedOn) {
+    if (isLedOn) {
+        return "images/LedOn.png";
+    } 
+    else {
+        return "images/LedOff.png";
+    }
+}
+
 connection.on("PowerGeneratorUpdate", function (generatedPower) {
-    var encodedMsg = "Current generated power: " + generatedPower;
-    var li = document.createElement("li");
-    li.textContent = encodedMsg;
-    document.getElementById("messagesList").appendChild(li);
+    var labelWithPowerValue = document.getElementById("currentPowerGeneration");
+    if (generatedPower <= 0) {
+        labelWithPowerValue.className = "redLabel";
+    } 
+    else if (generatedPower < 3) {
+        labelWithPowerValue.className = "yellowLabel";
+    } 
+    else {
+        labelWithPowerValue.className = "greenLabel"
+    }
+    
+    labelWithPowerValue.innerHTML = generatedPower.toFixed(2);
 });
-//
-// connection.on("ReceiveMessage", function (user, message) {
-//     var msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-//     var encodedMsg = user + " says " + msg;
-//     var li = document.createElement("li");
-//     li.textContent = encodedMsg;
-//     document.getElementById("messagesList").appendChild(li);
-// });
 
 connection.start().catch(function (err) {
     return console.error(err.toString());
 });
-
-// document.getElementById("sendButton").addEventListener("click", function (event) {
-//     var user = document.getElementById("userInput").value;
-//     var message = document.getElementById("messageInput").value;
-//     connection.invoke("SendMessage", user, message).catch(function (err) {
-//         return console.error(err.toString());
-//     });
-//     event.preventDefault();
-// });

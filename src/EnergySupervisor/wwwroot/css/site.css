@@ -35,3 +35,59 @@ body {
         display: none;
     }
 }
+
+div#systemStatus {
+    height: 500px;
+}
+
+div#one {
+    width: 40%;
+    height: 400px;
+    float: left;
+    background-color: #0f0f0f;
+}
+div#two {
+    margin-left: 40%;
+    height: 400px;
+}
+
+div#one label.powerGenerator {
+    margin-top: 20%;
+    margin-left: 25%;
+    text-align: center;
+    width: 50%;
+    font-size: 30px;
+    color: white;
+}
+
+div#one label.redLabel {
+    margin-left: 25%;
+    text-align: center;
+    width: 50%;
+    font-size: 72px;
+    color: red;
+    background-color: #0f0f0f;
+}
+
+div#one label.yellowLabel {
+    margin-left: 25%;
+    text-align: center;
+    width: 50%;
+    font-size: 72px;
+    color: yellow;
+    background-color: #0f0f0f;
+}
+
+div#one label.greenLabel {
+    margin-left: 25%;
+    text-align: center;
+    width: 50%;
+    font-size: 72px;
+    color: green;
+    background-color: #0f0f0f;
+}
+
+div#two label {
+    margin-left: 20px;
+    font-size: 20px;
+}
