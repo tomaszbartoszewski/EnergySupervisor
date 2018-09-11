@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EnergySupervisor.Domain;
 using EnergySupervisor.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -34,8 +35,17 @@ namespace EnergySupervisor
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            //services.AddSingleton<DeviceController>();
-            services.AddHostedService<FakeTelemetryIngesterHostedService>();
+            var iotHubConfiguration = new IoTHubConfiguration
+            {
+                IotHubConnectionString = Configuration["IotHubConnectionString"],
+                EventHubsCompatibleEndpoint = Configuration["EventHubsCompatibleEndpoint"],
+                EventHubsCompatiblePath = Configuration["EventHubsCompatiblePath"],
+                IotHubSasKey = Configuration["IotHubSasKey"],
+                IotHubSasKeyName = Configuration["IotHubSasKeyName"]
+            };
+            services.AddSingleton(iotHubConfiguration);
+            services.AddSingleton(new DeviceController(iotHubConfiguration));
+            services.AddHostedService<TelemetryIngesterHostedService>();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddSignalR();
         }

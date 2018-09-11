@@ -1,17 +1,17 @@
 ﻿using System.Text;
 using System.Threading.Tasks;
+using EnergySupervisor.Domain;
 using Microsoft.Azure.Devices;
 
 namespace EnergySupervisor.Services
 {
     public class DeviceController
     {
-        private ServiceClient serviceClient;
-        private string connectionString = "";
+        private readonly ServiceClient serviceClient;
 
-        public DeviceController()
+        public DeviceController(IoTHubConfiguration iotHubConfiguration)
         {
-            serviceClient = ServiceClient.CreateFromConnectionString(connectionString);
+            serviceClient = ServiceClient.CreateFromConnectionString(iotHubConfiguration.IotHubConnectionString);
         }
 
         public async Task ConsumePower(double availablePower)

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EnergySupervisor.Domain;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,17 +16,18 @@ namespace EnergySupervisor.Services
     public class TelemetryIngesterHostedService : IHostedService
     {
         private readonly IServiceProvider services;
-
-        private static readonly string s_eventHubsCompatibleEndpoint = "";
-
-        // Event Hub-compatible name
-        // az iot hub show --query properties.eventHubEndpoints.events.path --name {your IoT Hub name}
-        private static readonly string s_eventHubsCompatiblePath = "";
-        
-        // az iot hub policy show --name iothubowner --query primaryKey --hub-name {your IoT Hub name}
-        private static readonly string s_iotHubSasKey = "";
-        private static readonly string s_iotHubSasKeyName = "service";
+//
+//        private static readonly string s_eventHubsCompatibleEndpoint = "";
+//
+//        // Event Hub-compatible name
+//        // az iot hub show --query properties.eventHubEndpoints.events.path --name {your IoT Hub name}
+//        private static readonly string s_eventHubsCompatiblePath = "";
+//        
+//        // az iot hub policy show --name iothubowner --query primaryKey --hub-name {your IoT Hub name}
+//        private static readonly string s_iotHubSasKey = "";
+//        private static readonly string s_iotHubSasKeyName = "service";
         private static EventHubClient s_eventHubClient;
+        //private readonly IoTHubConfiguration iotHubConfiguration;
         
         public TelemetryIngesterHostedService(IServiceProvider services)
             => this.services = services;
@@ -40,10 +42,10 @@ namespace EnergySupervisor.Services
         private async Task DoWork()
         {
             Console.WriteLine("IoT Hub Quickstarts - Read device to cloud messages. Ctrl-C to exit.\n");
-
+            var iotHubConfiguration = services.GetRequiredService<IoTHubConfiguration>();
             // Create an EventHubClient instance to connect to the
             // IoT Hub Event Hubs-compatible endpoint.
-            var connectionString = new EventHubsConnectionStringBuilder(new Uri(s_eventHubsCompatibleEndpoint), s_eventHubsCompatiblePath, s_iotHubSasKeyName, s_iotHubSasKey);
+            var connectionString = new EventHubsConnectionStringBuilder(new Uri(iotHubConfiguration.EventHubsCompatibleEndpoint), iotHubConfiguration.EventHubsCompatiblePath, iotHubConfiguration.IotHubSasKeyName, iotHubConfiguration.IotHubSasKey);
             s_eventHubClient = EventHubClient.CreateFromConnectionString(connectionString.ToString());
 
             // Create a PartitionReciever for each partition on the hub.
@@ -67,30 +69,6 @@ namespace EnergySupervisor.Services
 
             // Wait for all the PartitionReceivers to finsih.
             Task.WaitAll(tasks.ToArray());
-            
-            
-            
-//            using (var scope = services.CreateScope())
-//            {
-//                var hubContext = 
-//                    scope.ServiceProvider
-//                        .GetRequiredService<IHubContext<PageUpdateHub>>();
-//
-//                var index = 0;
-//                
-//                while (true)
-//                {
-//                    if (index % 3 == 0)
-//                        hubContext.Clients.All.SendAsync("LedStatusUpdate", "testId", true);
-//                    else if (index % 3 == 1)
-//                        hubContext.Clients.All.SendAsync("LedStatusUpdate", "testId", false);
-//                    else
-//                        hubContext.Clients.All.SendAsync("PowerGeneratorUpdate", index);
-//
-//                    index++;
-//                    Thread.Sleep(1000);
-//                }
-//            }
         }
         
         
@@ -147,9 +125,13 @@ namespace EnergySupervisor.Services
                                 await deviceController.ConsumePower(powerGenerated);
                             }
                         }
-                        else
+                        else if (eventData.Properties.Any(p =>
+                            string.Equals(p.Key, "telemetryType", StringComparison.InvariantCultureIgnoreCase)
+                            && string.Equals(p.Value.ToString(), "powerConsumer",
+                                StringComparison.InvariantCultureIgnoreCase)))
                         {
-                            await hubContext.Clients.All.SendAsync("LedStatusUpdate", eventData.SystemProperties["iothub-connection-device-id"], true, ct);
+                            var isLedOn = string.Equals(data, "on", StringComparison.InvariantCultureIgnoreCase);
+                            await hubContext.Clients.All.SendAsync("LedStatusUpdate", eventData.SystemProperties["iothub-connection-device-id"], isLedOn, ct);
                         }
                     }
                 }
