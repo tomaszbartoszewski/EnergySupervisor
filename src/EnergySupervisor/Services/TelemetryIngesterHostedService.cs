@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EnergySupervisor.Cache;
 using EnergySupervisor.Domain;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,7 +91,7 @@ namespace EnergySupervisor.Services
                 while (true)
                 {
                     if (ct.IsCancellationRequested) break;
-                    Console.WriteLine("Listening for messages on: " + partition);
+                    // Console.WriteLine("Listening for messages on: " + partition);
                     // Check for EventData - this methods times out if there is nothing to retrieve.
                     var events = await eventHubReceiver.ReceiveAsync(100);
 
@@ -100,19 +101,20 @@ namespace EnergySupervisor.Services
                     foreach (EventData eventData in events)
                     {
                         string data = Encoding.UTF8.GetString(eventData.Body.Array);
-                        Console.WriteLine("Message received on partition {0}:", partition);
-                        Console.WriteLine("  {0}:", data);
-                        Console.WriteLine("Application properties (set by device):");
-
-                        foreach (var prop in eventData.Properties)
-                        {
-                            Console.WriteLine("  {0}: {1}", prop.Key, prop.Value);
-                        }
-                        Console.WriteLine("System properties (set by IoT Hub):");
-                        foreach (var prop in eventData.SystemProperties)
-                        {
-                            Console.WriteLine("  {0}: {1}", prop.Key, prop.Value);
-                        }
+                        Console.WriteLine($"{DateTime.Now} New message!!! {data}");
+//                        Console.WriteLine("Message received on partition {0}:", partition);
+//                        Console.WriteLine("  {0}:", data);
+//                        Console.WriteLine("Application properties (set by device):");
+//
+//                        foreach (var prop in eventData.Properties)
+//                        {
+//                            Console.WriteLine("  {0}: {1}", prop.Key, prop.Value);
+//                        }
+//                        Console.WriteLine("System properties (set by IoT Hub):");
+//                        foreach (var prop in eventData.SystemProperties)
+//                        {
+//                            Console.WriteLine("  {0}: {1}", prop.Key, prop.Value);
+//                        }
                         
                         if (eventData.Properties.Any(p =>
                             string.Equals(p.Key, "telemetryType", StringComparison.InvariantCultureIgnoreCase)
@@ -131,7 +133,10 @@ namespace EnergySupervisor.Services
                                 StringComparison.InvariantCultureIgnoreCase)))
                         {
                             var isLedOn = string.Equals(data, "on", StringComparison.InvariantCultureIgnoreCase);
-                            await hubContext.Clients.All.SendAsync("LedStatusUpdate", eventData.SystemProperties["iothub-connection-device-id"], isLedOn, ct);
+                            var deviceId = eventData.SystemProperties["iothub-connection-device-id"].ToString();
+                            //Console.WriteLine($"Device: {deviceId} Led status {isLedOn}");
+                            DevicesLastState.UpdateDeviceState(deviceId, isLedOn);
+                            await hubContext.Clients.All.SendAsync("LedStatusUpdate", deviceId, isLedOn, ct);
                         }
                     }
                 }
